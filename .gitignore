@@ -1,0 +1,6 @@
+// images n shit
+*.png
+*.gif
+*.svg
+
+bin/
