@@ -4,3 +4,5 @@
 *.svg
 
 bin/
+.cache
+compile_commands.json
