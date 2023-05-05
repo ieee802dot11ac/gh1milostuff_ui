@@ -1,8 +1,11 @@
-default: build
+default: genclang build
 
 build:
 	mkdir -p bin
-	gcc src/main.c -o bin/run -lSDL2 -lSDL2_image -lhmxobj
+	mkdir -p obj
+	gcc -c src/main.c -o obj/run.o -g
+	gcc obj/run.o -lSDL2 -lSDL2_image -lhmxobj -g -o bin/run
+
 
 genclang: 
 	bear -- clang -lSDL2 -lSDL2_image -lhmxobj src/main.c -o bin/run.clang

@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
 	SDL_Window *window = SDL_CreateWindow("Milo Bastard", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 800, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 	SDL_Renderer *render = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 	SDL_Rect *rect = &(SDL_Rect){0, 500, 300, 300};
-	SDL_Texture *texture;
+	SDL_Texture *texture = NULL;
 
 	if (render == NULL) {
 		printf("bad renderer!\n");
@@ -49,16 +49,29 @@ int main(int argc, char** argv) {
 					u8 mask = 0xF << shift;
 					pixel = (bitmap.texData[addr] & mask) >> shift;
 				} else {
-					fprintf(stderr, "Unsupported number of bits per pixel (%u bpp) in texture file.\n",
-							bitmap.bpp);
+					fprintf(stderr, "Unsupported number of bits per pixel (%u bpp) in texture file.\n", bitmap.bpp);
+					return -1;
 				}
 				HX_COLOR_8888 color = bitmap.colorPalette[pixel];
 				color = hmx_color_8888_fix_alpha(color);
-				unpaletted_bmp[x + y * bitmap.height] = (SDL_Color){color.r, color.g, color.b, color.a};
+				fprintf(stderr, "check 0\n");
+				unpaletted_bmp[x + y * bitmap.width] = (SDL_Color){color.r, color.g, color.b, color.a};
 			}
 		}
-		SDL_Surface *nuisance = &(SDL_Surface){0, pixelbastard, bitmap.width, bitmap.height, (bitmap.width*bitmap.bpp)/8, unpaletted_bmp};
-		texture = SDL_CreateTextureFromSurface(render, nuisance);
+		fprintf(stderr, "check\n");
+		SDL_Surface *nuisance = SDL_CreateRGBSurfaceWithFormatFrom(unpaletted_bmp, bitmap.width, bitmap.height, 8, (bitmap.width)*4, SDL_PIXELFORMAT_RGBA8888);
+		fprintf(stderr, "check 2\n");
+		if (nuisance != NULL) {
+			fprintf(stderr, "check 3\n");
+			texture = SDL_CreateTextureFromSurface(render, nuisance); 
+			fprintf(stderr, "check\n");
+		} else {
+			printf("bad surface!\n");
+			printf("%s\n", SDL_GetError());
+			SDL_FreeSurface(nuisance);
+			goto CLEANUP;
+		}
+		SDL_FreeSurface(nuisance);
 	} else {
 		texture = IMG_LoadTexture(render, argv[1]);
 	}
@@ -73,12 +86,12 @@ int main(int argc, char** argv) {
 				running = false;
 		}
 		SDL_RenderCopy(render, texture, NULL, NULL);
-		//SDL_RenderDrawRect(render, rect);
-		//SDL_RenderFillRect(render, rect);
+//		SDL_RenderDrawRect(render, rect);
+//		SDL_RenderFillRect(render, rect);
 		SDL_RenderPresent(render);
 	}
-
 	SDL_DestroyTexture(texture);
+	CLEANUP:
 	SDL_DestroyRenderer(render);
 	SDL_DestroyWindow(window);
 	IMG_Quit();
